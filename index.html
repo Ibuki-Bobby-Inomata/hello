@@ -11,23 +11,23 @@
     <div id="txt">ここにデータを表示</div> <!-- データを表示するdiv要素 -->
 
     <script>
-        var acc_x = 0, aY = 0, aZ = 0;                     // 加速度の値を入れる変数を3個用意
-        var alpha = 0, beta = 0, gamma = 0;             // ジャイロの値を入れる変数を3個用意
+        var acc_x = 0, acc_y = 0, acc_z = 0;                     // 加速度の値を入れる変数を3個用意
+        var do_alpha = 0, do_beta = 0, do_gamma = 0;             // ジャイロの値を入れる変数を3個用意
 
 
         // 加速度センサの値が変化したら実行される devicemotion イベント
         window.addEventListener("devicemotion", (dat) => {
             acc_x = dat.accelerationIncludingGravity.x;    // x軸の重力加速度（Android と iOSでは正負が逆）
-            aY = dat.accelerationIncludingGravity.y;    // y軸の重力加速度（Android と iOSでは正負が逆）
-            aZ = dat.accelerationIncludingGravity.z;    // z軸の重力加速度（Android と iOSでは正負が逆）
+            acc_y = dat.accelerationIncludingGravity.y;    // y軸の重力加速度（Android と iOSでは正負が逆）
+            acc_z = dat.accelerationIncludingGravity.z;    // z軸の重力加速度（Android と iOSでは正負が逆）
         });
 
 
         // ジャイロセンサの値が変化したら実行される deviceorientation イベント
         window.addEventListener("deviceorientation", (dat) => {
-            alpha = dat.alpha;  // z軸（表裏）まわりの回転の角度（反時計回りがプラス）
-            beta = dat.beta;   // x軸（左右）まわりの回転の角度（引き起こすとプラス）
-            gamma = dat.gamma;  // y軸（上下）まわりの回転の角度（右に傾けるとプラス）
+            do_alpha = dat.alpha;  // z軸（表裏）まわりの回転の角度（反時計回りがプラス）
+            do_beta = dat.beta;   // x軸（左右）まわりの回転の角度（引き起こすとプラス）
+            do_gamma = dat.gamma;  // y軸（上下）まわりの回転の角度（右に傾けるとプラス）
         });
 
 
@@ -40,9 +40,12 @@
         // データを表示する displayData 関数
         function displayData() {
             var txt = document.getElementById("txt");   // データを表示するdiv要素の取得
-            txt.innerHTML = "x: " + acc_x + "<br>"         // x軸の値
-                + "y: " + aY + "<br>"         // y軸の値
-                + "z: " + aZ;                 // z軸の値
+            txt.innerHTML = "acc_x: " + acc_x + "<br>"         // x軸の値
+                + "acc_y: " + acc_y + "<br>"         // y軸の値
+                + "acc_z: " + acc_z + "<br>"
+                + "acc_x: " + do_alpha + "<br>"         // x軸の値
+                + "acc_y: " + do_beta + "<br>"         // y軸の値
+                + "acc_z: " + do_gamma;                 // z軸の値
         }
     </script>
 
