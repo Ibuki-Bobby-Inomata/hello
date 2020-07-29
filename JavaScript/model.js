@@ -10,15 +10,15 @@ window.addEventListener('load', async () => {
         // date: null,
 
         // デバイスの向き（角度）
-        do_absolute: null,
-        do_alpha: null,
+        // do_absolute: null,
+        // do_alpha: null,
         do_beta: null,
         do_gamma: null,
 
         // 加速度（重力含まず）
-        acc_g_x: null,
-        acc_g_y: null,
-        acc_g_z: null,
+        // acc_g_x: null,
+        // acc_g_y: null,
+        // acc_g_z: null,
 
         // 加速度（重力含む）
         acc_x: null,
@@ -26,7 +26,7 @@ window.addEventListener('load', async () => {
         acc_z: null,
 
         // 回転速度
-        rot_alpha: null,
+        // rot_alpha: null,
         rot_beta: null,
         rot_gamma: null
     };
