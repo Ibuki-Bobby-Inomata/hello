@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>加速度の値を得る</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.0.1/tf.min.js"></script>
+
+    <script>
+        let sensorData = {
+            // データ取得開始時刻を格納
+            // date: null,
+
+            // デバイスの向き（角度）
+            do_absolute: null,
+            do_alpha: null,
+            do_beta: null,
+            do_gamma: null,
+
+            // 加速度（重力含まず）
+            acc_g_x: null,
+            acc_g_y: null,
+            acc_g_z: null,
+
+            // 加速度（重力含む）
+            acc_x: null,
+            acc_y: null,
+            acc_z: null,
+
+            // 回転速度
+            rot_alpha: null,
+            rot_beta: null,
+            rot_gamma: null
+        };
+
+        window.addEventListener('deviceorientation', (event) => {
+            event.preventDefault();
+            sensorData.do_absolute = (event.absolute !== null) ? event.absolute : false;
+            sensorData.do_alpha = event.alpha;
+            sensorData.do_beta = event.beta;
+            sensorData.do_gamma = event.gamma;
+        }, true);
+
+        window.addEventListener('devicemotion', (event) => {
+            event.preventDefault();
+            sensorData.acc_g_x = event.accelerationIncludingGravity.x;
+            sensorData.acc_g_y = event.accelerationIncludingGravity.y;
+            sensorData.acc_g_z = event.accelerationIncludingGravity.z;
+            sensorData.acc_x = event.acceleration.x;
+            sensorData.acc_y = event.acceleration.y;
+            sensorData.acc_z = event.acceleration.z;
+            sensorData.rot_alpha = event.rotationRate.alpha;
+            sensorData.rot_beta = event.rotationRate.beta;
+            sensorData.rot_gamma = event.rotationRate.gamma;
+        }, true);
+
+        var timer = window.setInterval(() => {
+            displayData();
+        }, 1);
+
+        function displayData() {
+            var txt = document.getElementById("txt");
+            txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"   
+                + "acc_y: " + sensorData.acc_y + "<br>"         
+                + "acc_z: " + sensorData.acc_z + "<br>"
+                + "rot_alpha: " + sensorData.rot_alpha + "<br>"         
+                + "rot_beta: " + sensorData.rot_beta + "<br>"        
+                + "rot_gamma: " + sensorData.rot_gamma + "<br>" 
+                + "do_alpha: " + sensorData.do_alpha + "<br>"        
+                + "do_beta: " + sensorData.do_beta + "<br>"
+                + "do_gamma: " + sensorData.do_gamma;                
+        }
+        
+    </script>
+</head>
+
+<body>
+    <div id="txt">ここにデータを表示</div> <!-- データを表示するdiv要素 -->
+</body>
+
+</html>
