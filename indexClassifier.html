@@ -77,10 +77,10 @@
             const pred_data = pred.dataSync();
             changeActionText(argMax(pred_data));
 
-            // 推定データのログ表示
-            logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
-            logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
-            logElm.scrollTop = logElm.scrollHeight;
+            // // 推定データのログ表示
+            // logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
+            // logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
+            // logElm.scrollTop = logElm.scrollHeight;
         };
 
         const changeActionText = (pred_index) => {
@@ -167,11 +167,6 @@
             return index;
         }
 
-
-        var timer = window.setInterval(() => {
-            displayData();
-        }, 1);
-
         function displayData() {
             var txt = document.getElementById("txt");
             txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"
@@ -188,7 +183,6 @@
 </head>
 
 <body>
-    <!-- <div id="txt">ここにデータを表示</div> データを表示するdiv要素 -->
     <div class="wrapper">
         <div class="action-view">
             <span id="action">推定中…</span>
@@ -196,6 +190,7 @@
 
         <pre id="log"></pre>
     </div>
+    <div id="txt">ここにデータを表示</div> <!-- データを表示するdiv要素 -->
 </body>
 
 </html>
