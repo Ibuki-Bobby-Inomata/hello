@@ -10,9 +10,16 @@
 <body>
     <div id="txt">ここにデータを表示</div> <!-- データを表示するdiv要素 -->
 
+    <div class="action-view">
+        <span id="action">推定中…</span>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.0.1/tf.min.js"></script>
+
     <script>
-        // var acc_x = 0, acc_y = 0, acc_z = 0;                     // 加速度の値を入れる変数を3個用意
-        // var do_alpha = 0, do_beta = 0, do_gamma = 0;             // ジャイロの値を入れる変数を3個用意
+        const modelPath = `${window.location.href}assets/model.json`;
+        const model = await tf.loadLayersModel(modelPath);
+
         let sensorData = {
             // データ取得開始時刻を格納
             // date: null,
@@ -39,63 +46,152 @@
             rot_gamma: null
         };
 
+        let outlier = [];
+
+        // 推論に使うデータ構造を格納する変数
+        let preproData = null;
+
+        // 各テンソルを格納しておくスタック
+        let acc_tensor = [[]];
+        let do_tensor = [[]];
+        let rot_tensor = [[]];
+        let acc_z_tensor = [[]];
+
+
+        const sleep = (mSec) => new Promise(resolve => setTimeout(resolve, mSec));
+
+
+
+        (async () => {
+            const sleepMSec = 200;
+            let isCollectSensor = true;
+
+            while (isCollectSensor) {
+                // センサデータの加工を行ってデータ構造を作成する
+                prepro(JSON.parse(JSON.stringify(sensorData)));
+
+                // データが 10 個揃ったら推論を始める
+                // キューを用意し、一つずつずらしながら推論のデータ構造を作成する
+                if (preproData !== null) {
+                    motionEstimation();
+                }
+
+                await sleep(sleepMSec);
+            }
+        })();
+
+        const motionEstimation = async () => {
+            const pred = await model.predict(preproData);
+            const pred_data = pred.dataSync();
+            changeActionText(result(pred_data));
+
+            // 推定データのログ表示
+            logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
+            logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
+            logElm.scrollTop = logElm.scrollHeight;
+        };
+
+        const changeActionText = (pred_index) => {
+            const actionText = ['直立、着席', '歩行', '階段（上り下り）', '寝ている'];
+            const actionTextElm = document.getElementById('action');
+            actionTextElm.textContent = actionText[pred_index];  //結果
+        };
+
+
+
         window.addEventListener('deviceorientation', (event) => {
             event.preventDefault();
-            sensorData.do_absolute = (event.absolute !== null) ? event.absolute : false;
-            sensorData.do_alpha = event.alpha;
+            // sensorData.do_absolute = (event.absolute !== null) ? event.absolute : false;
+            // sensorData.do_alpha = event.alpha;
             sensorData.do_beta = event.beta;
             sensorData.do_gamma = event.gamma;
         }, true);
 
         window.addEventListener('devicemotion', (event) => {
             event.preventDefault();
-            sensorData.acc_g_x = event.accelerationIncludingGravity.x;
-            sensorData.acc_g_y = event.accelerationIncludingGravity.y;
-            sensorData.acc_g_z = event.accelerationIncludingGravity.z;
+            // sensorData.acc_g_x = event.accelerationIncludingGravity.x;
+            // sensorData.acc_g_y = event.accelerationIncludingGravity.y;
+            // sensorData.acc_g_z = event.accelerationIncludingGravity.z;
             sensorData.acc_x = event.acceleration.x;
             sensorData.acc_y = event.acceleration.y;
             sensorData.acc_z = event.acceleration.z;
-            sensorData.rot_alpha = event.rotationRate.alpha;
+            // sensorData.rot_alpha = event.rotationRate.alpha;
             sensorData.rot_beta = event.rotationRate.beta;
             sensorData.rot_gamma = event.rotationRate.gamma;
         }, true);
 
 
-        // // 加速度センサの値が変化したら実行される devicemotion イベント
-        // window.addEventListener("devicemotion", (dat) => {
-        //     acc_x = dat.accelerationIncludingGravity.x;    // x軸の重力加速度（Android と iOSでは正負が逆）
-        //     acc_y = dat.accelerationIncludingGravity.y;    // y軸の重力加速度（Android と iOSでは正負が逆）
-        //     acc_z = dat.accelerationIncludingGravity.z;    // z軸の重力加速度（Android と iOSでは正負が逆）
-        // });
+        function prepro(data) {
+            const acc = Math.sqrt(Math.pow(data.acc_x, 2) + Math.pow(data.acc_y, 2) + Math.pow(data.acc_z, 2));
+            const acc_z_prepro = data.acc_z + 26;
+
+            const acc_fin = acc / 319.57;
+            const acc_z_fin = (acc_z_prepro - 7) / (51 - 7);
+
+            const do_beta_fin = (data.do_beta + 180) / 360;
+            const do_gamma_fin = (data.do_gamma + 90) / 180;
+
+            const rot_beta_fin = (data.rot_beta + 300) / 600;
+            const rot_gamma_fin = (data.rot_gamma + 300) / 600;
 
 
-        // // ジャイロセンサの値が変化したら実行される deviceorientation イベント
-        // window.addEventListener("deviceorientation", (dat) => {
-        //     do_alpha = dat.alpha;  // z軸（表裏）まわりの回転の角度（反時計回りがプラス）
-        //     do_beta = dat.beta;   // x軸（左右）まわりの回転の角度（引き起こすとプラス）
-        //     do_gamma = dat.gamma;  // y軸（上下）まわりの回転の角度（右に傾けるとプラス）
-        // });
+            if ((acc_fin > 319.57 || acc_fin < 0)
+                || (acc_z_fin > 51) || (acc_z_fin < 7)
+                || (rot_beta_fin > 600) || (rot_beta_fin < 0)
+                || (rot_gamma_fin > 600) || (rot_gamma_fin) < 0) {
+                outlier.push(JSON.parse(JSON.stringify(data)))
+            }
 
 
+            else {
+                acc_tensor[0].push([acc_fin]);
+                do_tensor[0].push([do_beta_fin, do_gamma_fin]);
+                rot_tensor[0].push([rot_beta_fin, rot_gamma_fin]);
+                acc_z_tensor[0].push([acc_z_fin]);
 
-        // 指定時間ごとに繰り返し実行される setInterval(実行する内容, 間隔[ms]) タイマーを設定
-        var timer = window.setInterval(() => {
-            displayData();      // displayData 関数を実行
-        }, 1); // 33msごとに（1秒間に約30回）
+                if (acc_tensor[0].length > 10) {
+                    acc_tensor[0].shift();
+                    do_tensor[0].shift();
+                    rot_tensor[0].shift();
+                    acc_z_tensor[0].shift();
 
-        // データを表示する displayData 関数
-        function displayData() {
-            var txt = document.getElementById("txt");   // データを表示するdiv要素の取得
-            txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"         // x軸の値
-                + "acc_y: " + sensorData.acc_y + "<br>"         // y軸の値
-                + "acc_z: " + sensorData.acc_z + "<br>"
-                + "rot_alpha: " + sensorData.rot_alpha + "<br>"         // x軸の値
-                + "rot_beta: " + sensorData.rot_beta + "<br>"         // y軸の値
-                + "rot_gamma: " + sensorData.rot_gamma+ "<br>" // x軸の値
-                + "do_alpha: " + sensorData.do_alpha + "<br>"         // y軸の値
-                + "do_beta: " + sensorData.do_beta + "<br>"
-                + "do_gamma: " + sensorData.do_gamma;                 // z軸の値
+                    // データが 10 個格納されたら推論が行えるので preproData にデータを格納する
+                    preproData = [tf.tensor(acc_tensor), tf.tensor(do_tensor), tf.tensor(rot_tensor), tf.tensor(acc_z_tensor)];
+                }
+            }
         }
+
+        function result(a) {
+            let index = 0;
+            let value = -Infinity;
+
+            for (let i = 0, l = a.length; i < l; i++) {
+                if (value < a[i]) {
+                    value = a[i];
+                    index = i;
+                }
+            }
+
+            return index;
+        }
+
+        // var timer = window.setInterval(() => {
+        //     displayData();
+        // }, 1);
+
+
+        // function displayData() {
+        //     var txt = document.getElementById("txt");
+        //     txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"
+        //         + "acc_y: " + sensorData.acc_y + "<br>"
+        //         + "acc_z: " + sensorData.acc_z + "<br>"
+        //         + "rot_alpha: " + sensorData.rot_alpha + "<br>"
+        //         + "rot_beta: " + sensorData.rot_beta + "<br>"
+        //         + "rot_gamma: " + sensorData.rot_gamma + "<br>"
+        //         + "do_alpha: " + sensorData.do_alpha + "<br>"
+        //         + "do_beta: " + sensorData.do_beta + "<br>"
+        //         + "do_gamma: " + sensorData.do_gamma;
+        // }
     </script>
 
 </body>
