@@ -1,1 +1,2 @@
-http.server 8000
+import SimpleHTTPServer
+SimpleHTTPServer.test()
