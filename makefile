@@ -4,3 +4,8 @@ heroku:
 	heroku create
 	git push heroku master
 	heroku open
+
+heroku-dell:
+	heroku create
+	git push heroku master
+	heroku open
