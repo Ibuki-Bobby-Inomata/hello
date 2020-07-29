@@ -2,6 +2,9 @@ window.addEventListener('load', async () => {
     const modelPath = `${window.location.href}assets/model.json`;
     const model = await tf.loadLayersModel(modelPath);
 
+    const logElm = document.getElementById('log');
+    logElm.innerText += `Using Platform: ${tf.getBackend()}\n\n`;
+
     let sensorData = {
         // データ取得開始時刻を格納
         // date: null,
@@ -68,9 +71,9 @@ window.addEventListener('load', async () => {
         changeActionText(result(pred_data));
 
         // 推定データのログ表示
-        // logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
-        // logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
-        // logElm.scrollTop = logElm.scrollHeight;
+        logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
+        logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
+        logElm.scrollTop = logElm.scrollHeight;
     };
 
     const changeActionText = (pred_index) => {
