@@ -138,10 +138,10 @@
                 const rot_gamma_fin = (data.rot_gamma + 300) / 600;
 
                 // 異常値が存在したらログに残してデータは保存しない
-                if ((acc_z_fin > 51 || acc_z_fin < 7)
-                    || (acc_fin > 319.57 || acc_fin < 0)
-                    || (rot_beta_fin > 600 || rot_beta_fin < 0)
-                    || (rot_gamma_fin > 600 || rot_gamma_fin < 0)) {
+                if (acc_z_fin > 51 || acc_z_fin < 7
+                    || acc_fin > 319.57 || acc_fin < 0
+                    || rot_beta_fin > 600 || rot_beta_fin < 0
+                    || rot_gamma_fin > 600 || rot_gamma_fin < 0) {
                     outlierDataArray.push(JSON.parse(JSON.stringify(data)));
                 }
 
