@@ -60,10 +60,11 @@
             (async () => {
                 const sleepMSec = 200;
                 let isCollectSensor = true;
-                console.log('err')
+                console.log('err_0')
 
                 while (isCollectSensor) {
                     // センサデータの加工を行ってデータ構造を作成する
+                    console.log('err_1')
                     prepro(JSON.parse(JSON.stringify(sensorData)));
 
                     
