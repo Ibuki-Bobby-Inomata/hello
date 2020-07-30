@@ -60,11 +60,13 @@
             (async () => {
                 const sleepMSec = 200;
                 let isCollectSensor = true;
+                console.log('err')
+
                 while (isCollectSensor) {
                     // センサデータの加工を行ってデータ構造を作成する
                     prepro(JSON.parse(JSON.stringify(sensorData)));
 
-                    console.log('err')
+                    
 
                     // データが 10 個揃ったら推論を始める
                     // キューを用意し、一つずつずらしながら推論のデータ構造を作成する
