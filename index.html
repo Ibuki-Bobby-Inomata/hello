@@ -62,7 +62,7 @@
                 let isCollectSensor = true;
                 while (isCollectSensor) {
                     // センサデータの加工を行ってデータ構造を作成する
-                    processingSensorData(JSON.parse(JSON.stringify(sensorData)));
+                    prepro(JSON.parse(JSON.stringify(sensorData)));
 
                     // データが 10 個揃ったら推論を始める
                     // キューを用意し、一つずつずらしながら推論のデータ構造を作成する
