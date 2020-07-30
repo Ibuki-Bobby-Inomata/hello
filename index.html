@@ -82,6 +82,9 @@
             const motionEstimation = async () => {
                 const pred = await model.predict(processedData);
                 const pred_data = pred.dataSync();
+
+                console.log(pred_data)
+
                 changeActionText(argMax(pred_data));
 
                 // 推定データのログ表示
