@@ -9,6 +9,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.0.1/tf.min.js"></script>
 
     <script>
+        const modelPath = `${window.location.href}assets/model.json`;
+        const model = await tf.loadLayersModel(modelPath);
+
+        const logElm = document.getElementById('log');
+        logElm.innerText += `Using Platform: ${tf.getBackend()}\n\n`;
+
         let sensorData = {
             // データ取得開始時刻を格納
             // date: null,
@@ -35,6 +41,55 @@
             rot_gamma: null
         };
 
+        // 異常値を格納しておくデータ構造
+        let outlierDataArray = [];
+
+        // 推論に使うデータ構造を格納する変数
+        let processedData = null;
+
+        // 各テンソルを格納しておくスタック
+        let acc_tensor = [[]];
+        let do_tensor = [[]];
+        let rot_tensor = [[]];
+        let acc_z_tensor = [[]];
+
+        const sleep = (mSec) => new Promise(resolve => setTimeout(resolve, mSec));
+
+        (async () => {
+            const sleepMSec = 200;
+            let isCollectSensor = true;
+            while (isCollectSensor) {
+                // センサデータの加工を行ってデータ構造を作成する
+                processingSensorData(JSON.parse(JSON.stringify(sensorData)));
+
+                // データが 10 個揃ったら推論を始める
+                // キューを用意し、一つずつずらしながら推論のデータ構造を作成する
+                if (processedData !== null) {
+                    motionEstimation();
+                }
+
+                await sleep(sleepMSec);
+            }
+        })();
+
+        const motionEstimation = async () => {
+            const pred = await model.predict(processedData);
+            const pred_data = pred.dataSync();
+            changeActionText(argMax(pred_data));
+
+            // 推定データのログ表示
+            logElm.innerText += `0: ${pred_data[0]}   |   1: ${pred_data[1]}   |    2: ${pred_data[2]}   |   3: ${pred_data[3]}\n`;
+            logElm.innerText += `--------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
+            logElm.scrollTop = logElm.scrollHeight;
+        };
+
+        const changeActionText = (pred_index) => {
+            const actionText = ['直立、着席', '歩行', '階段（上り下り）', '寝ている'];
+            const actionTextElm = document.getElementById('action');
+            actionTextElm.textContent = actionText[pred_index];
+        };
+
+
         window.addEventListener('deviceorientation', (event) => {
             event.preventDefault();
             sensorData.do_absolute = (event.absolute !== null) ? event.absolute : false;
@@ -56,27 +111,85 @@
             sensorData.rot_gamma = event.rotationRate.gamma;
         }, true);
 
-        var timer = window.setInterval(() => {
-            displayData();
-        }, 1);
+
+        function prepro(data) {
+            const acc = Math.sqrt(Math.pow(data.acc_x, 2) + Math.pow(data.acc_y, 2) + Math.pow(data.acc_z, 2));
+            const acc_fin = acc / 319.57; // 0 ~ 1 の間で正規化を行っている`
+
+            const acc_z_max = data.acc_z + 26; // 最大値が 26 までだったので正規化、機械学習モデルが学習しやすい形に変換するため（0 ~ 1 の間で表現できると良いため）
+            const acc_z_fin = (acc_z_max - 7) / (51 - 7);
+
+            const do_beta_fin = (data.do_beta + 180) / 360;
+            const do_gamma_fin = (data.do_gamma + 90) / 180;
+
+            const rot_beta_fin = (data.rot_beta + 300) / 600;
+            const rot_gamma_fin = (data.rot_gamma + 300) / 600;
+
+            // 異常値が存在したらログに残してデータは保存しない
+            if ((acc_z_fin > 51 || acc_z_fin < 7)
+                || (acc_fin > 319.57 || acc_fin < 0)
+                || (rot_beta_fin > 600 || rot_beta_fin < 0)
+                || (rot_gamma_fin > 600 || rot_gamma_fin < 0)) {
+                outlierDataArray.push(JSON.parse(JSON.stringify(data)));
+            }
+
+            // テンソルを作成する
+            else {
+                acc_tensor[0].push([acc_fin]);
+                do_tensor[0].push([do_beta_fin, do_gamma_fin]);
+                rot_tensor[0].push([rot_beta_fin, rot_gamma_fin]);
+                acc_z_tensor[0].push([acc_z_fin]);
+
+                // tf.tensor(acc_z_tensor).print();
+                if (acc_tensor[0].length > 10) {
+                    acc_tensor[0].shift();
+                    do_tensor[0].shift();
+                    rot_tensor[0].shift();
+                    acc_z_tensor[0].shift();
+
+                    // データが 10 個格納されたら推論が行えるので processedData にデータを格納する
+                    processedData = [tf.tensor(acc_tensor), tf.tensor(do_tensor), tf.tensor(rot_tensor), tf.tensor(acc_z_tensor)];
+                }
+            }
+        }
+
+        function argMax(a) {
+            let index = 0;
+            let value = -Infinity;
+
+            for (let i = 0, l = a.length; i < l; i++) {
+                if (value < a[i]) {
+                    value = a[i];
+                    index = i;
+                }
+            }
+
+            return index;
+        }
 
         function displayData() {
             var txt = document.getElementById("txt");
-            txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"   
-                + "acc_y: " + sensorData.acc_y + "<br>"         
+            txt.innerHTML = "acc_x: " + sensorData.acc_x + "<br>"
+                + "acc_y: " + sensorData.acc_y + "<br>"
                 + "acc_z: " + sensorData.acc_z + "<br>"
-                + "rot_alpha: " + sensorData.rot_alpha + "<br>"         
-                + "rot_beta: " + sensorData.rot_beta + "<br>"        
-                + "rot_gamma: " + sensorData.rot_gamma + "<br>" 
-                + "do_alpha: " + sensorData.do_alpha + "<br>"        
+                + "rot_alpha: " + sensorData.rot_alpha + "<br>"
+                + "rot_beta: " + sensorData.rot_beta + "<br>"
+                + "rot_gamma: " + sensorData.rot_gamma + "<br>"
+                + "do_alpha: " + sensorData.do_alpha + "<br>"
                 + "do_beta: " + sensorData.do_beta + "<br>"
-                + "do_gamma: " + sensorData.do_gamma;                
+                + "do_gamma: " + sensorData.do_gamma;
         }
-        
     </script>
 </head>
 
 <body>
+    <div class="wrapper"></div>
+        <div class="action-view">
+            <span id="action">推定中…</span>
+        </div>
+
+        <pre id="log"></pre>
+    </div>
     <div id="txt">ここにデータを表示</div> <!-- データを表示するdiv要素 -->
 </body>
 
