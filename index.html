@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>加速度の値を得る</title>
+    <title>カメラ・看板アプリ</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.0.1/tf.min.js"></script>
 
@@ -96,7 +96,7 @@
             };
 
             const changeActionText = (pred_index) => {
-                const actionText = ['直立、着席', '歩行', '階段（上り下り）', '寝ている'];
+                const actionText = ['直立、着席', '歩行', '階段（上り下り）', '寝ている', '商品', '看板'];
                 const actionTextElm = document.getElementById('action');
                 actionTextElm.textContent = actionText[pred_index];
             };
