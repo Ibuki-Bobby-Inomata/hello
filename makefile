@@ -1,6 +1,6 @@
 heroku:
 	git add .
-	git commit -m 'heroku'
+	git commit -m 'heroku' origin/master
 	heroku create
 	git push heroku master
 	heroku open
