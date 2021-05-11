@@ -96,7 +96,7 @@
             };
 
             const changeActionText = (pred_index) => {
-                const actionText = ['直立、着席', '歩行', '階段（上り下り）', '寝ている'];
+                const actionText = ['左右-小さい', '上下-大きい', '上下-小さい', '左右-大きい'];
                 const actionTextElm = document.getElementById('action');
                 actionTextElm.textContent = actionText[pred_index];
             };
@@ -126,10 +126,10 @@
 
             function prepro(data) {
                 const acc = Math.sqrt(Math.pow(data.acc_x, 2) + Math.pow(data.acc_y, 2) + Math.pow(data.acc_z, 2));
-                const acc_fin = acc / 319.57; // 0 ~ 1 の間で正規化を行っている`
+                const acc_fin = acc / 1262.865; // 0 ~ 1 の間で正規化を行っている`
 
-                const acc_z_max = data.acc_z + 26; // 最大値が 26 までだったので正規化、機械学習モデルが学習しやすい形に変換するため（0 ~ 1 の間で表現できると良いため）
-                const acc_z_fin = (acc_z_max - 7) / (51 - 7);
+                const acc_z_max = data.acc_z + 18; // 最大値が 26 までだったので正規化、機械学習モデルが学習しやすい形に変換するため（0 ~ 1 の間で表現できると良いため）
+                const acc_z_fin = (acc_z_max - 2.2) / (54.8 - 2.2);
 
                 const do_beta_fin = (data.do_beta + 180) / 360;
                 const do_gamma_fin = (data.do_gamma + 90) / 180;
